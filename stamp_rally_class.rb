@@ -21,7 +21,6 @@
 
   attr_accessor :sum_island, :adjacent_island
 end
-file_access = FileAccess.new()
 
 
 class ChooseIsland                                               #島を選ぶクラス
@@ -35,24 +34,24 @@ class ChooseIsland                                               #島を選ぶ�
   def start_island(sum_island, adjacent_island)                  #最初の島を選ぶ関数
     @start_island_number = 0
     @number_of_adjacent_island_start = 0
-    sum_island.times do |i|                                      #全ての島に適用
+    sum_island.times do |i|                                             #全ての島に適用
       if @number_of_adjacent_island_start < adjacent_island[i].size     #隣接数が一番多い島を選ぶ
         @number_of_adjacent_island_start = adjacent_island[i].size      #隣接数の記憶
-        @start_island_number = i                                  #島番号の記憶
+        @start_island_number = i                                        #島番号の記憶
       end
     end
-    return @start_island_number                                   #島番号を返す
+    return @start_island_number                                         #島番号を返す
   end
 
-  def next_island(sum_island, adjacent_island, current_island)             #次の島を決める関数
+  def next_island(sum_island, adjacent_island, current_island)          #次の島を決める関数
     @next_island_number = nil
     @number_of_adjacent_island_next = sum_island
-    adjacent_island[current_island].map do |item|                          #隣接島の要素全てに適用
+    adjacent_island[current_island].map do |item|                       #隣接島の要素全てに適用
 
       #隣接数が0でなく、一番少ない島を選ぶ
       if @number_of_adjacent_island_next > adjacent_island[item].size && adjacent_island[item].size != 0
         @number_of_adjacent_island_next = adjacent_island[item].size                                        #隣接数の記憶
-        @next_island_number = item                                                                     #島番号の記憶
+        @next_island_number = item                                                                          #島番号の記憶
       end
     end
 
@@ -62,7 +61,6 @@ class ChooseIsland                                               #島を選ぶ�
     return @next_island_number
   end
 end
-choose_island = ChooseIsland.new(file_access.sum_island)
 
 
 class Preparation                                      #探索の準備をするクラス（1文字ずつにわける、型の変換、枝切り）
@@ -99,43 +97,43 @@ class Preparation                                      #探索の準備をする
     end
   end
 end
-preparation = Preparation.new()
 
 
-class Delete                                                           #島を削除するクラス
+class SearchSupport                                                    #島の探索を支援するクラス（削除、判定など）
   def delete_island(sum_island, adjacent_island, current_island)       #通った島を選択肢から削除する関数
     sum_island.times do |i|                                            #全ての島に適用
       adjacent_island[i].delete(current_island)                        #通った島を配列から消す  差集合をとるより処理が速い？差集合では配列の要素が大きくなりすぎるから？
     end
   end
-end
-delete = Delete.new()
-
-
-class Check                                                          #判定を行うクラス          
-  def check_possible_search(adjacent_island, current_island)         #次の島に行けるかどうか判定するクラス                    
+    
+  def check_possible_search(adjacent_island, current_island)           #次の島に行けるかどうか判定する関数                  
     return adjacent_island[current_island] == []
   end
 end
-check = Check.new()
 
 
 history = []                        #通った島を記憶する配列
+
+#クラスの宣言
+file_access = FileAccess.new()
+choose_island = ChooseIsland.new(file_access.sum_island)
+preparation = Preparation.new()
+search_support = SearchSupport.new()
+
 start_time = Time.now               #開始時刻の取得
 file_access.file_read()             #mapを読み込む       
-
 preparation.transform(file_access.sum_island, file_access.adjacent_island)     #1文字ずつに分ける&枝切り準備
 preparation.pruning(file_access.sum_island, file_access.adjacent_island)       #枝切り
 
 
 #島を移動する処理
-current_island = choose_island.start_island(file_access.sum_island, file_access.adjacent_island)         #最初の島を決定
+current_island = choose_island.start_island(file_access.sum_island, file_access.adjacent_island)       #最初の島を決定
 while true
-  history << current_island                                                                   #通った島の記憶
+  history << current_island                                                                            #通った島の記憶
 
-  delete.delete_island(file_access.sum_island, file_access.adjacent_island, current_island)   #通った島を削除
+  search_support.delete_island(file_access.sum_island, file_access.adjacent_island, current_island)    #通った島を削除
 
-  break if check.check_possible_search(file_access.adjacent_island, current_island)           #隣接する島がなくなったらループを抜ける
+  break if search_support.check_possible_search(file_access.adjacent_island, current_island)           #隣接する島がなくなったらループを抜ける
 
   current_island = choose_island.next_island(file_access.sum_island, file_access.adjacent_island, current_island)         #次の島を決定
 end
